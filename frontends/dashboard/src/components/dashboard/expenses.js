@@ -652,7 +652,7 @@ export const Expenses = (props) => {
         >
           <ResponsiveCalendar
             data={data}
-            from="2019-07-10"
+            from="2020-01-01"
             to="2021-04-27"
             emptyColor="#eeeeee"
             colors={["#97e3d5", "#e8c1a0", "#f47560", "#61cdbb"]}
