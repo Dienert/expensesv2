@@ -2,8 +2,9 @@
 
 # bank files
 dados/cartao/**.ofx
-datos/conta/**.ofx
-
+dados/cartao/old
+dados/conta/**.ofx
+dados/tudo.csv
 # dependencies
 frontend/node_modules
 
