@@ -23,8 +23,8 @@ def parse_xml(path):
 
 lista = []
 
-pathCartao = '../dados/cartao/'
-pathConta = '../dados/conta/'
+pathCartao = '../../dados/cartao/'
+pathConta = '../../dados/conta/'
 
 filesCartao = [file for file in os.listdir(pathCartao) if '2025' in file]
 filesCartao.sort()
@@ -38,5 +38,5 @@ for file in filesCartao:
     lista.extend(parse_xml(pathCartao+file))
 
 import json
-with open('../dados/tudo.json', 'w') as fout:
+with open('../../dados/tudo.json', 'w') as fout:
     json.dump(lista , fout, indent=4)
