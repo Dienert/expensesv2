@@ -1,23 +1,26 @@
 import React, { useMemo } from 'react';
+// @ts-ignore
 import { ResponsiveSankey } from '@nivo/sankey';
 import type { Transaction } from '../../lib/types';
-import { formatCurrency } from '../../lib/data';
+// removed formatCurrency import
 import { useMediaQuery } from '../../lib/hooks';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface SankeyFlowProps {
     transactions: Transaction[];
     totalIncome: number;
+    title?: string;
 }
 
-export const SankeyFlow: React.FC<SankeyFlowProps> = ({ transactions, totalIncome }) => {
+export const SankeyFlow: React.FC<SankeyFlowProps> = ({ transactions, totalIncome, title }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
-    const data = useMemo(() => {
-        // 1. Calculate Nodes & Links
-        // Structure: Income -> Category -> Top Merchants (limit 3 per category to keep it clean)
+    const { t, formatCurrency } = useLanguage();
 
+    const data = useMemo(() => {
+        const incomeNodeId = 'IncomeNode';
         const nodes: { id: string, label: string, nodeColor?: string }[] = [{
-            id: 'Total Income',
-            label: isMobile ? 'Income' : 'Total Income',
+            id: incomeNodeId,
+            label: t('income'),
             nodeColor: '#10b981'
         }];
         const links: { source: string, target: string, value: number }[] = [];
@@ -41,9 +44,10 @@ export const SankeyFlow: React.FC<SankeyFlowProps> = ({ transactions, totalIncom
         Object.entries(categoryMap)
             .sort((a, b) => b[1].total - a[1].total)
             .forEach(([cat, { total, merchants }]) => {
-                const catLabel = isMobile ? cat.slice(0, 8) + (cat.length > 8 ? '..' : '') : cat;
+                const translatedCat = t(`categories.${cat.toLowerCase()}`);
+                const catLabel = isMobile ? translatedCat.slice(0, 8) + (translatedCat.length > 8 ? '..' : '') : translatedCat;
                 nodes.push({ id: cat, label: catLabel, nodeColor: '#3b82f6' });
-                links.push({ source: 'Total Income', target: cat, value: total });
+                links.push({ source: incomeNodeId, target: cat, value: total });
 
                 const topMerchants = Object.entries(merchants)
                     .sort((a, b) => b[1] - a[1])
@@ -63,8 +67,8 @@ export const SankeyFlow: React.FC<SankeyFlowProps> = ({ transactions, totalIncom
 
                 const othersVal = total - topMerchantsTotal;
                 if (othersVal > 0) {
-                    const otherId = `Others (${cat})`;
-                    const otherLabel = isMobile ? 'Others' : otherId;
+                    const otherId = `${t('sankey.others')} (${cat})`;
+                    const otherLabel = t('sankey.others');
                     if (!nodes.find(n => n.id === otherId)) {
                         nodes.push({ id: otherId, label: otherLabel, nodeColor: '#64748b' });
                     }
@@ -72,28 +76,28 @@ export const SankeyFlow: React.FC<SankeyFlowProps> = ({ transactions, totalIncom
                 }
             });
 
-        // If Total Income > Total Expenses, show Savings?
+        // Savings
         const totalExpenses = expenses.reduce((acc, t) => acc + Math.abs(t.amount), 0);
         const savings = totalIncome - totalExpenses;
         if (savings > 0) {
-            nodes.push({ id: 'Savings', label: isMobile ? 'Save' : 'Savings', nodeColor: '#10b981' });
-            links.push({ source: 'Total Income', target: 'Savings', value: savings });
+            nodes.push({ id: 'SavingsNode', label: t('sankey.savings'), nodeColor: '#10b981' });
+            links.push({ source: incomeNodeId, target: 'SavingsNode', value: savings });
         }
 
         return { nodes, links };
-    }, [transactions, totalIncome, isMobile]);
+    }, [transactions, totalIncome, isMobile, t]);
 
-    // Define tooltip component separately to satisfy types or use any cast if needed for Nivo strict types
     const CustomTooltip = (node: any) => (
         <div className="bg-slate-900 border border-slate-700 p-2 rounded shadow-xl text-xs">
-            <strong>{node.id}:</strong> {formatCurrency(node.value)}
+            <strong>{node.label || node.id}:</strong> {formatCurrency(node.value)}
         </div>
     );
 
     return (
         <div className={`${isMobile ? 'h-[500px]' : 'h-[600px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl`}>
-            <h3 className="text-slate-100 text-lg font-semibold mb-4">Money Flow (Income → Category → Merchant)</h3>
+            <h3 className="text-slate-100 text-lg font-semibold mb-4">{title || t('sankey.title')}</h3>
             <div className={isMobile ? 'h-[400px]' : 'h-[500px]'}>
+                {/* @ts-ignore */}
                 <ResponsiveSankey
                     data={data}
                     label="label"
@@ -133,7 +137,7 @@ export const SankeyFlow: React.FC<SankeyFlowProps> = ({ transactions, totalIncom
                             fontWeight: 500,
                         }
                     }}
-                    // @ts-ignore - Nivo generic types can be tricky
+                    // @ts-ignore - tooltip type mismatch in Nivo 0.99
                     tooltip={CustomTooltip}
                 />
             </div>

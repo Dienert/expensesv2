@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownRight, DollarSign } from 'lucide-react';
-import { formatCurrency } from '../lib/data';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface StatsCardProps {
     title: string;
@@ -11,6 +11,7 @@ interface StatsCardProps {
 }
 
 export const StatsCard: React.FC<StatsCardProps> = ({ title, value, type }) => {
+    const { formatCurrency } = useLanguage();
     const colorClass = type === 'income' ? 'text-emerald-400' : type === 'expense' ? 'text-rose-400' : 'text-blue-400';
     const bgClass = type === 'income' ? 'bg-emerald-400/10' : type === 'expense' ? 'bg-rose-400/10' : 'bg-blue-400/10';
     const icon = type === 'income' ? <ArrowUpRight /> : type === 'expense' ? <ArrowDownRight /> : <DollarSign />;

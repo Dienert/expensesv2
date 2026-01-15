@@ -1,13 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { Transaction } from '../../lib/types';
-import { formatCurrency } from '../../lib/data';
+// removed formatCurrency import
 import { isSameMonth, parseISO, format, getDate, startOfMonth } from 'date-fns';
 import { useMediaQuery } from '../../lib/hooks';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CumulativePacingProps {
     currentTransactions: Transaction[];
     allTransactions: Transaction[];
+    title?: string;
 }
 
 const COLORS = [
@@ -15,8 +17,10 @@ const COLORS = [
     '#06b6d4', '#ec4899', '#f97316', '#6366f1', '#14b8a6'
 ];
 
-export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransactions }) => {
+export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransactions, title }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
+    const { t, formatCurrency, dateLocale, language } = useLanguage();
+
     // 1. Extract unique months for selection
     const availableMonths = useMemo(() => {
         const months = new Set<string>();
@@ -72,7 +76,7 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
 
     const formatMonthLabel = (key: string) => {
         try {
-            return format(parseISO(`${key}-01`), 'MMM yyyy');
+            return format(parseISO(`${key}-01`), 'MMM yyyy', { locale: dateLocale });
         } catch {
             return key;
         }
@@ -87,7 +91,7 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
 
         return (
             <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl shadow-2xl">
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-2">Day {label}</p>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-2">{t('pacing.day')} {label}</p>
                 <div className="flex items-center gap-2">
                     <div
                         className="w-2 h-2 rounded-full"
@@ -114,9 +118,9 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
         <div className="h-[400px] w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col overflow-hidden">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
-                    <h3 className="text-slate-100 text-lg font-semibold">Monthly Pacing</h3>
+                    <h3 className="text-slate-100 text-lg font-semibold">{title || t('cumulativePacing')}</h3>
                     <p className="text-slate-400 text-xs mt-1">
-                        {showAll ? 'Comparing all history' : 'Comparing selected months'}
+                        {showAll ? t('pacing.comparingAll') : t('pacing.comparingSelected')}
                     </p>
                 </div>
 
@@ -129,7 +133,7 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
                             : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
                             }`}
                     >
-                        {showAll ? 'Show Two' : 'Show All'}
+                        {showAll ? t('pacing.showTwo') : t('pacing.showAll')}
                     </button>
 
                     {!showAll && (
@@ -143,7 +147,7 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
                                     <option key={m} value={m}>{formatMonthLabel(m)}</option>
                                 ))}
                             </select>
-                            <span className="text-slate-500 text-xs font-bold">vs</span>
+                            <span className="text-slate-500 text-xs font-bold">{t('pacing.vs')}</span>
                             <select
                                 value={month2}
                                 onChange={(e) => setMonth2(e.target.value)}
@@ -163,7 +167,7 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
                     <LineChart
                         data={data}
                         margin={{ top: 5, right: isMobile ? 10 : 30, left: isMobile ? -20 : 20, bottom: 5 }}
-                        onMouseMove={(e) => {
+                        onMouseMove={(e: any) => {
                             if (e.activePayload && e.activePayload.length > 0 && e.chartY !== undefined) {
                                 // Approximate mapping: chartY to value
                                 // Parent container is 400px, title/padding ~80px, chart ~300px
@@ -181,7 +185,7 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
                                         closest = p.dataKey;
                                     }
                                 });
-                                if (closest) setHoveredLine(closest);
+                                if (closest) setHoveredLine(closest as string);
                             }
                         }}
                         onMouseLeave={() => setHoveredLine(null)}
@@ -192,7 +196,7 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
                             stroke="#94a3b8"
                             tick={{ fill: '#94a3b8', fontSize: isMobile ? 10 : 12 }}
                             axisLine={{ stroke: '#334155' }}
-                            tickFormatter={(val) => isMobile ? `${(val / 1000).toFixed(0)}k` : `R$${(val / 1000).toFixed(1)}k`}
+                            tickFormatter={(val) => isMobile ? `${(val / 1000).toFixed(0)}k` : `${language === 'pt-BR' ? 'R$' : '$'}${(val / 1000).toFixed(1)}k`}
                             domain={[0, 'auto']}
                         />
                         <Tooltip
@@ -203,7 +207,7 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
                         <Legend
                             wrapperStyle={{ color: '#e2e8f0', paddingTop: isMobile ? '10px' : '20px', fontSize: isMobile ? '10px' : '12px' }}
                             formatter={(value) => formatMonthLabel(value)}
-                            onMouseEnter={(o) => setHoveredLine(o.value)}
+                            onMouseEnter={(o: any) => setHoveredLine(o.value ?? null)}
                             onMouseLeave={() => setHoveredLine(null)}
                         />
 
@@ -211,7 +215,6 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
                             availableMonths.map((month, index) => {
                                 const isFocused = hoveredLine === month;
                                 const isOthersFocused = hoveredLine !== null && !isFocused;
-                                const isDefault = hoveredLine === null;
 
                                 const baseWidth = month === availableMonths[0] ? 3 : 1;
                                 const baseOpacity = month === availableMonths[0] ? 1 : 0.4;

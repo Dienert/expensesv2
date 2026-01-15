@@ -34,18 +34,20 @@ const INFER_CATEGORY = (desc: string): string => {
     return 'Other';
 };
 
-export const transactions: Transaction[] = (rawData as RawTransaction[]).map((t, index) => {
-    const amount = parseFloat(t.valor);
-    return {
-        id: `${t.date}-${index}`,
-        date: parseISO(t.date),
-        description: t.descricao,
-        amount: amount,
-        referenceDate: t.referencia,
-        category: INFER_CATEGORY(t.descricao),
-        isIncome: amount > 0,
-    };
-});
+export const transactions: Transaction[] = Array.isArray(rawData)
+    ? (rawData as RawTransaction[]).map((t, index) => {
+        const amount = parseFloat(t.valor);
+        return {
+            id: `${t.date}-${index}`,
+            date: parseISO(t.date),
+            description: t.descricao,
+            amount: amount,
+            referenceDate: t.referencia,
+            category: INFER_CATEGORY(t.descricao),
+            isIncome: amount > 0,
+        };
+    })
+    : [];
 
 export const getMonthlyStats = (txs: Transaction[] = transactions): MonthlyStats[] => {
     const groups: Record<string, MonthlyStats> = {};

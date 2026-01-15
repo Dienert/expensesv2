@@ -1,18 +1,21 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import type { MonthlyStats } from '../../lib/types';
-import { formatCurrency } from '../../lib/data';
+// removed formatCurrency import
 import { useMediaQuery } from '../../lib/hooks';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface SpendingTrendProps {
     data: MonthlyStats[];
+    title?: string;
 }
 
-export const SpendingTrend: React.FC<SpendingTrendProps> = ({ data }) => {
+export const SpendingTrend: React.FC<SpendingTrendProps> = ({ data, title }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
+    const { t, formatCurrency, language } = useLanguage();
     return (
         <div className={`${isMobile ? 'h-[300px]' : 'h-[400px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col overflow-hidden`}>
-            <h3 className="text-slate-100 text-lg font-semibold mb-6">Income vs Expenses</h3>
+            <h3 className="text-slate-100 text-lg font-semibold mb-6">{title || t('spendingTrend')}</h3>
             <div className="flex-1 min-h-0 w-full relative">
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={1}>
                     <BarChart
@@ -35,7 +38,7 @@ export const SpendingTrend: React.FC<SpendingTrendProps> = ({ data }) => {
                             stroke="#94a3b8"
                             tick={{ fill: '#94a3b8', fontSize: isMobile ? 10 : 12 }}
                             axisLine={{ stroke: '#334155' }}
-                            tickFormatter={(value) => isMobile ? `${value / 1000}k` : `R$ ${value / 1000}k`}
+                            tickFormatter={(value) => isMobile ? `${value / 1000}k` : `${language === 'pt-BR' ? 'R$ ' : '$'}${value / 1000}k`}
                         />
                         <Tooltip
                             cursor={{ fill: '#1e293b', opacity: 0.5 }}
@@ -44,8 +47,8 @@ export const SpendingTrend: React.FC<SpendingTrendProps> = ({ data }) => {
                             labelStyle={{ color: '#e2e8f0' }}
                         />
                         <Legend />
-                        <Bar name="Income" dataKey="totalIncome" fill="#34d399" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                        <Bar name="Expense" dataKey="totalExpense" fill="#fb7185" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                        <Bar name={t('income')} dataKey="totalIncome" fill="#34d399" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                        <Bar name={t('expenses')} dataKey="totalExpense" fill="#fb7185" radius={[4, 4, 0, 0]} maxBarSize={50} />
                     </BarChart>
                 </ResponsiveContainer>
             </div>

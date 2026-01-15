@@ -28,3 +28,5 @@ yarn-debug.log*
 yarn-error.log*
 frontends/web/src/data/expenses.json
 dados/tudo.json
+frontends/web/dist-electron/**/**
+dados/cartao - cópia/**

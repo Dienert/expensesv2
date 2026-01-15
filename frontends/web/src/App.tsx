@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { LayoutDashboard, Receipt, PieChart, Settings, Wallet, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Receipt, PieChart, Settings, Wallet, Menu, X, CloudUpload } from 'lucide-react';
 import { StatsCard } from './components/StatsCard';
 import { SpendingTrend } from './components/Charts/SpendingTrend';
 import { CategoryBreakdown } from './components/Charts/CategoryBreakdown';
@@ -11,9 +11,12 @@ import { SpendingHeatmap } from './components/Charts/SpendingHeatmap';
 import { SpendingRadar } from './components/Charts/SpendingRadar';
 import { CumulativePacing } from './components/Charts/CumulativePacing';
 import { SpendingParallel } from './components/Charts/SpendingParallel';
+import { DataImport } from './components/DataImport';
+import { Settings as SettingsView } from './components/Settings';
 import { transactions as allTransactions, getMonthlyStats } from './lib/data';
 import { isWithinInterval, subMonths, isSameDay } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useLanguage } from './contexts/LanguageContext';
 
 interface SidebarContentProps {
   activeTab: string;
@@ -31,72 +34,83 @@ const SidebarContent = ({
   onToggleCollapse,
   isMobile = false,
   onClose
-}: SidebarContentProps) => (
-  <>
-    <div
-      className={`p-6 border-b border-slate-800 flex items-center gap-3 transition-colors ${!isMobile ? 'cursor-pointer hover:bg-slate-800/50' : ''}`}
-      onClick={!isMobile ? onToggleCollapse : undefined}
-    >
-      <div className="bg-brand-500/20 p-2 rounded-lg min-w-10">
-        <Wallet className="text-brand-400 w-6 h-6" />
-      </div>
-      <motion.h1
-        animate={{ opacity: isCollapsed ? 0 : 1, width: isCollapsed ? 0 : 'auto' }}
-        className="text-xl font-bold bg-gradient-to-r from-brand-300 to-brand-500 bg-clip-text text-transparent whitespace-nowrap overflow-hidden"
+}: SidebarContentProps) => {
+  const { t } = useLanguage();
+  return (
+    <>
+      <div
+        className={`p-6 border-b border-slate-800 flex items-center gap-3 transition-colors ${!isMobile ? 'cursor-pointer hover:bg-slate-800/50' : ''}`}
+        onClick={!isMobile ? onToggleCollapse : undefined}
       >
-        FinViz
-      </motion.h1>
-      {isMobile && (
-        <button
-          onClick={onClose}
-          className="ml-auto p-2 text-slate-400 hover:text-slate-100 md:hidden"
+        <div className="bg-brand-500/20 p-2 rounded-lg min-w-10">
+          <Wallet className="text-brand-400 w-6 h-6" />
+        </div>
+        <motion.h1
+          animate={{ opacity: isCollapsed ? 0 : 1, width: isCollapsed ? 0 : 'auto' }}
+          className="text-xl font-bold bg-gradient-to-r from-brand-300 to-brand-500 bg-clip-text text-transparent whitespace-nowrap overflow-hidden"
         >
-          <X className="w-5 h-5" />
-        </button>
-      )}
-    </div>
-
-    <nav className="flex-1 p-4 space-y-2">
-      {[
-        { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-        { id: 'transactions', icon: Receipt, label: 'Transactions' },
-        { id: 'analytics', icon: PieChart, label: 'Analytics' },
-        { id: 'settings', icon: Settings, label: 'Settings' },
-      ].map(item => (
-        <button
-          key={item.id}
-          onClick={() => {
-            setActiveTab(item.id);
-            if (isMobile && onClose) onClose();
-          }}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === item.id
-            ? 'bg-brand-500/10 text-brand-400'
-            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-            }`}
-          title={isCollapsed ? item.label : ''}
-        >
-          <item.icon className="w-5 h-5 min-w-5" />
-          <motion.span
-            animate={{ opacity: isCollapsed ? 0 : 1, width: isCollapsed ? 0 : 'auto' }}
-            className="whitespace-nowrap overflow-hidden"
+          FinViz
+        </motion.h1>
+        {isMobile && (
+          <button
+            onClick={onClose}
+            className="ml-auto p-2 text-slate-400 hover:text-slate-100 md:hidden"
           >
-            {item.label}
-          </motion.span>
-        </button>
-      ))}
-    </nav>
-  </>
-);
+            <X className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+
+      <nav className="flex-1 p-4 space-y-2">
+        {[
+          { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
+          { id: 'transactions', icon: Receipt, label: t('transactions') },
+          { id: 'analytics', icon: PieChart, label: t('analytics') },
+          { id: 'import', icon: CloudUpload, label: t('import') },
+          { id: 'settings', icon: Settings, label: t('settings') },
+        ].map(item => (
+          <button
+            key={item.id}
+            onClick={() => {
+              setActiveTab(item.id);
+              if (isMobile && onClose) onClose();
+            }}
+            className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === item.id
+              ? 'bg-brand-500/10 text-brand-400'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+              }`}
+            title={isCollapsed ? item.label : ''}
+          >
+            <item.icon className="w-5 h-5 min-w-5" />
+            <motion.span
+              animate={{ opacity: isCollapsed ? 0 : 1, width: isCollapsed ? 0 : 'auto' }}
+              className="whitespace-nowrap overflow-hidden"
+            >
+              {item.label}
+            </motion.span>
+          </button>
+        ))}
+      </nav>
+    </>
+  );
+};
 
 function App() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange>(() => {
-    const now = new Date();
-    // Default to last 3 months to show meaningful trend, or all time
-    return { start: subMonths(now, 3), end: now };
+    if (allTransactions.length === 0) {
+      const now = new Date();
+      return { start: subMonths(now, 6), end: now };
+    }
+    const dates = allTransactions.map(t => t.date.getTime());
+    return {
+      start: new Date(Math.min(...dates)),
+      end: new Date(Math.max(...dates))
+    };
   });
 
   // Filter transactions based on date range
@@ -178,8 +192,8 @@ function App() {
         <div className={`p-4 md:p-8 mx-auto space-y-8 ${activeTab === 'analytics' ? 'max-w-none' : 'max-w-7xl'}`}>
           <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 pt-16 md:pt-0">
             <div>
-              <h2 className="text-xl font-bold text-slate-100 uppercase tracking-wider">{activeTab}</h2>
-              <p className="text-slate-400 text-sm">Welcome back! Here's your {activeTab} overview.</p>
+              <h2 className="text-xl font-bold text-slate-100 uppercase tracking-wider">{t(activeTab)}</h2>
+              <p className="text-slate-400 text-sm">FinViz - {t(activeTab)}</p>
             </div>
             <DateRangePicker value={dateRange} onChange={setDateRange} />
           </header>
@@ -203,26 +217,46 @@ function App() {
                 ) : (
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <StatsCard title="Total Balance" value={balance} type="balance" />
-                      <StatsCard title="Total Income" value={totalIncome} type="income" />
-                      <StatsCard title="Total Expenses" value={totalExpense} type="expense" />
+                      <StatsCard title={t('balance')} value={balance} type="balance" />
+                      <StatsCard title={t('income')} value={totalIncome} type="income" />
+                      <StatsCard title={t('expenses')} value={totalExpense} type="expense" />
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      <div className="lg:col-span-2">
-                        <SpendingTrend data={monthlyData} />
-                      </div>
-                      <div className="lg:col-span-1">
-                        <CategoryBreakdown
-                          transactions={filteredTransactions}
-                          onCategoryClick={setSelectedCategory}
-                        />
-                      </div>
-                    </div>
+                    {filteredTransactions.length > 0 ? (
+                      <>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                          <div className="lg:col-span-2">
+                            <SpendingTrend data={monthlyData} />
+                          </div>
+                          <div className="lg:col-span-1">
+                            <CategoryBreakdown
+                              transactions={filteredTransactions}
+                              onCategoryClick={setSelectedCategory}
+                            />
+                          </div>
+                        </div>
 
-                    <div>
-                      <TransactionList transactions={filteredTransactions} />
-                    </div>
+                        <div>
+                          <TransactionList transactions={filteredTransactions} />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 text-center space-y-4">
+                        <div className="inline-flex p-4 bg-slate-800 rounded-full text-slate-400">
+                          <Receipt className="w-8 h-8" />
+                        </div>
+                        <h4 className="text-xl font-semibold text-slate-100">{t('noTransactions')}</h4>
+                        <p className="text-slate-400 max-w-md mx-auto">
+                          {t('noDataDescription')}
+                        </p>
+                        <button
+                          onClick={() => setActiveTab('import')}
+                          className="px-6 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
+                        >
+                          {t('goToImport')}
+                        </button>
+                      </div>
+                    )}
                   </>
                 )}
               </motion.div>
@@ -273,6 +307,28 @@ function App() {
                 <TransactionList transactions={filteredTransactions} />
               </motion.div>
             )}
+
+            {activeTab === 'import' && (
+              <motion.div
+                key="import"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+              >
+                <DataImport />
+              </motion.div>
+            )}
+
+            {activeTab === 'settings' && (
+              <motion.div
+                key="settings"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+              >
+                <SettingsView />
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </main>
@@ -280,4 +336,12 @@ function App() {
   );
 }
 
-export default App;
+import { LanguageProvider } from './contexts/LanguageContext';
+
+export default function AppWrapper() {
+  return (
+    <LanguageProvider>
+      <App />
+    </LanguageProvider>
+  );
+}

@@ -4,13 +4,17 @@ import { ResponsiveParallelCoordinates } from '@nivo/parallel-coordinates';
 import type { Transaction } from '../../lib/types';
 import { format } from 'date-fns';
 import { useMediaQuery } from '../../lib/hooks';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface SpendingParallelProps {
     transactions: Transaction[];
+    title?: string;
 }
 
-export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions }) => {
+export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions, title }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
+    const { t } = useLanguage();
+
     const { data, variables, monthLabels } = useMemo(() => {
         // 0. Initial Guard
         const expenses = transactions.filter(t => !t.isIncome);
@@ -78,7 +82,7 @@ export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions
                 id: safeKey,
                 key: safeKey,
                 value: safeKey,
-                label: cat.charAt(0).toUpperCase() + cat.slice(1),
+                label: t(`categories.${cat.toLowerCase()}`),
                 type: 'linear' as const,
                 min: 0,
                 max: maxVal,
@@ -91,7 +95,7 @@ export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions
             id: 'month',
             key: 'month',
             value: 'month',
-            label: 'Month',
+            label: t('parallel.month'),
             type: 'linear' as const,
             min: 0,
             max: Math.max(1, sortedMonths.length - 1),
@@ -101,17 +105,20 @@ export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions
         });
 
         return { data: chartData, variables: chartVariables, monthLabels: indexToMonthLabel };
-    }, [transactions]);
+    }, [transactions, t, isMobile]);
 
     const CustomTooltip = ({ datum }: any) => {
         const monthLabel = monthLabels[datum.data.month] || datum.id;
-        const formatCurrency = (val: number) =>
-            new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+        const formatCurrencyTooltip = (val: number) =>
+            new Intl.NumberFormat(t('dashboard') === 'Painel' ? 'pt-BR' : 'en-US', {
+                style: 'currency',
+                currency: t('dashboard') === 'Painel' ? 'BRL' : 'USD'
+            }).format(val);
 
         return (
             <div className="bg-slate-900 border border-slate-700 p-3 rounded-lg shadow-xl min-w-[180px]">
                 <div className="border-b border-slate-800 pb-2 mb-2">
-                    <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Month</span>
+                    <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">{t('parallel.month')}</span>
                     <div className="text-blue-400 font-bold text-sm">{monthLabel}</div>
                 </div>
                 <div className="space-y-1.5">
@@ -122,7 +129,7 @@ export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions
                             <div key={v.id} className="flex justify-between items-center gap-4">
                                 <span className="text-slate-300 text-xs">{v.label}</span>
                                 <span className="text-slate-100 text-xs font-mono font-medium">
-                                    {formatCurrency(val)}
+                                    {formatCurrencyTooltip(val)}
                                 </span>
                             </div>
                         );
@@ -136,7 +143,7 @@ export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions
     if (data.length === 0) {
         return (
             <div className="h-[550px] w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex items-center justify-center text-slate-500">
-                <p>Not enough spending data to visualize trends.</p>
+                <p>{t('noTransactions')}</p>
             </div>
         );
     }
@@ -144,25 +151,25 @@ export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions
     return (
         <div className="h-[550px] w-full bg-slate-900 border border-slate-800 p-8 rounded-2xl overflow-hidden flex flex-col">
             <div className="mb-6">
-                <h3 className="text-slate-100 text-xl font-bold mb-2">Monthly Spending Fingerprint</h3>
+                <h3 className="text-slate-100 text-xl font-bold mb-2">{title || t('parallel.title')}</h3>
                 <p className="text-slate-400 text-base leading-relaxed">
-                    Track how your spending distribution evolves.
-                    <span className="text-blue-400 font-semibold ml-1">Each line is a month (e.g., 2026/12).</span>
+                    {t('parallel.subtitle')}
+                    <span className="text-blue-400 font-semibold ml-1">{t('parallel.lineNote')}.</span>
                 </p>
                 <div className="flex gap-6 mt-4 items-center">
                     <div className="flex gap-4 text-xs text-slate-500">
                         <div className="flex items-center gap-1.5">
                             <div className="w-3 h-3 bg-emerald-400 rounded-full"></div>
-                            <span>Lower spending</span>
+                            <span>{t('parallel.lower')}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                             <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
-                            <span>Higher spending</span>
+                            <span>{t('parallel.higher')}</span>
                         </div>
                     </div>
                     <div className="h-4 w-[1px] bg-slate-800"></div>
                     <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">
-                        Insight: Parallel lines = Consistency • Crossing lines = Changing Priorities
+                        {t('parallel.insight')}
                     </p>
                 </div>
             </div>
@@ -186,7 +193,6 @@ export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions
                                 line: { stroke: '#334155', strokeWidth: 1 },
                                 text: { fill: '#94a3b8', fontSize: 11 }
                             },
-                            // Disable default Nivo legends as we use our custom layer
                             legend: {
                                 text: { display: 'none' }
                             }
@@ -214,7 +220,6 @@ export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions
                     tooltip={CustomTooltip}
                 />
 
-                {/* Robust Flexbox Axis Labels */}
                 <div
                     className="absolute bottom-0 left-0 right-0 flex pointer-events-none"
                     style={{
@@ -242,7 +247,7 @@ export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions
 
             <div className="mt-4 pt-4 border-t border-slate-800 flex justify-between items-center">
                 <p className="text-xs text-slate-500">
-                    Showing top {variables.length - 1} categories across {data.length} months.
+                    {t('parallel.footer', { n: variables.length - 1, m: data.length })}
                 </p>
                 <p className="text-[10px] text-slate-600 uppercase tracking-widest">
                     Data Visualization Engine • Expenses v2

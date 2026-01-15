@@ -1,13 +1,15 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import type { Transaction } from '../../lib/types';
-import { formatCurrency } from '../../lib/data';
+// removed formatCurrency import
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface MerchantsChartProps {
     transactions: Transaction[];
 }
 
 export const MerchantsChart: React.FC<MerchantsChartProps> = ({ transactions }) => {
+    const { t, formatCurrency } = useLanguage();
     const data = React.useMemo(() => {
         const expenses = transactions.filter(t => !t.isIncome);
         const groups: Record<string, number> = {};
@@ -22,8 +24,8 @@ export const MerchantsChart: React.FC<MerchantsChartProps> = ({ transactions }) 
 
     return (
         <div className="h-[300px] w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-            <h3 className="text-slate-100 text-lg font-semibold mb-4">Top Merchants</h3>
-            <ResponsiveContainer width="100%" height="100%">
+            <h3 className="text-slate-100 text-lg font-semibold mb-4">{t('stats.topMerchants')}</h3>
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={1}>
                 <BarChart
                     data={data}
                     layout="vertical"

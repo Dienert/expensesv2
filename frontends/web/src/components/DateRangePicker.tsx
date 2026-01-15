@@ -2,6 +2,8 @@ import React from 'react';
 import { Calendar } from 'lucide-react';
 import { startOfMonth, endOfMonth, startOfYear, subMonths, format } from 'date-fns';
 
+import { useLanguage } from '../contexts/LanguageContext';
+
 export interface DateRange {
     start: Date;
     end: Date;
@@ -13,6 +15,7 @@ interface DateRangePickerProps {
 }
 
 export const DateRangePicker: React.FC<DateRangePickerProps> = ({ value, onChange }) => {
+    const { t } = useLanguage();
     const handlePreset = (preset: 'thisMonth' | 'lastMonth' | 'thisYear' | 'allTime') => {
         const now = new Date();
         switch (preset) {
@@ -39,17 +42,17 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ value, onChang
         <div className="flex flex-wrap items-center gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
             <div className="flex items-center gap-2 px-3 text-slate-400">
                 <Calendar className="w-4 h-4" />
-                <span className="text-sm font-medium hidden sm:inline">Period</span>
+                <span className="text-sm font-medium hidden sm:inline">{t('dateRange.period')}</span>
             </div>
 
             <div className="h-6 w-px bg-slate-800 mx-1 hidden sm:block"></div>
 
             <div className="flex gap-1">
                 {[
-                    { label: 'Last Month', value: 'lastMonth' },
-                    { label: 'This Month', value: 'thisMonth' },
-                    { label: 'This Year', value: 'thisYear' },
-                    { label: 'All Time', value: 'allTime' },
+                    { label: t('dateRange.lastMonth'), value: 'lastMonth' },
+                    { label: t('dateRange.thisMonth'), value: 'thisMonth' },
+                    { label: t('dateRange.thisYear'), value: 'thisYear' },
+                    { label: t('dateRange.allTime'), value: 'allTime' },
                 ].map((preset) => (
                     <button
                         key={preset.value}
