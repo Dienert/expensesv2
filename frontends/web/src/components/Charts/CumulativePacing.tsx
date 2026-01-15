@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import type { Transaction } from '../../lib/types';
 import { formatCurrency } from '../../lib/data';
 import { isSameMonth, parseISO, format, getDate, startOfMonth } from 'date-fns';
+import { useMediaQuery } from '../../lib/hooks';
 
 interface CumulativePacingProps {
     currentTransactions: Transaction[];
@@ -15,6 +16,7 @@ const COLORS = [
 ];
 
 export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransactions }) => {
+    const isMobile = useMediaQuery('(max-width: 768px)');
     // 1. Extract unique months for selection
     const availableMonths = useMemo(() => {
         const months = new Set<string>();
@@ -160,7 +162,7 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={1}>
                     <LineChart
                         data={data}
-                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        margin={{ top: 5, right: isMobile ? 10 : 30, left: isMobile ? -20 : 20, bottom: 5 }}
                         onMouseMove={(e) => {
                             if (e.activePayload && e.activePayload.length > 0 && e.chartY !== undefined) {
                                 // Approximate mapping: chartY to value
@@ -185,12 +187,12 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
                         onMouseLeave={() => setHoveredLine(null)}
                     >
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                        <XAxis dataKey="day" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} axisLine={{ stroke: '#334155' }} />
+                        <XAxis dataKey="day" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: isMobile ? 10 : 12 }} axisLine={{ stroke: '#334155' }} />
                         <YAxis
                             stroke="#94a3b8"
-                            tick={{ fill: '#94a3b8' }}
+                            tick={{ fill: '#94a3b8', fontSize: isMobile ? 10 : 12 }}
                             axisLine={{ stroke: '#334155' }}
-                            tickFormatter={(val) => `R$${(val / 1000).toFixed(1)}k`}
+                            tickFormatter={(val) => isMobile ? `${(val / 1000).toFixed(0)}k` : `R$${(val / 1000).toFixed(1)}k`}
                             domain={[0, 'auto']}
                         />
                         <Tooltip
@@ -199,7 +201,7 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
                             shared={true}
                         />
                         <Legend
-                            wrapperStyle={{ color: '#e2e8f0', paddingTop: '20px' }}
+                            wrapperStyle={{ color: '#e2e8f0', paddingTop: isMobile ? '10px' : '20px', fontSize: isMobile ? '10px' : '12px' }}
                             formatter={(value) => formatMonthLabel(value)}
                             onMouseEnter={(o) => setHoveredLine(o.value)}
                             onMouseLeave={() => setHoveredLine(null)}

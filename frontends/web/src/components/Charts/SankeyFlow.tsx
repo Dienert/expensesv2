@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { ResponsiveSankey } from '@nivo/sankey';
 import type { Transaction } from '../../lib/types';
 import { formatCurrency } from '../../lib/data';
+import { useMediaQuery } from '../../lib/hooks';
 
 interface SankeyFlowProps {
     transactions: Transaction[];
@@ -9,11 +10,16 @@ interface SankeyFlowProps {
 }
 
 export const SankeyFlow: React.FC<SankeyFlowProps> = ({ transactions, totalIncome }) => {
+    const isMobile = useMediaQuery('(max-width: 768px)');
     const data = useMemo(() => {
         // 1. Calculate Nodes & Links
         // Structure: Income -> Category -> Top Merchants (limit 3 per category to keep it clean)
 
-        const nodes: { id: string, nodeColor?: string }[] = [{ id: 'Total Income', nodeColor: '#10b981' }];
+        const nodes: { id: string, label: string, nodeColor?: string }[] = [{
+            id: 'Total Income',
+            label: isMobile ? 'Income' : 'Total Income',
+            nodeColor: '#10b981'
+        }];
         const links: { source: string, target: string, value: number }[] = [];
 
         // Filter expenses
@@ -33,36 +39,34 @@ export const SankeyFlow: React.FC<SankeyFlowProps> = ({ transactions, totalIncom
 
         // Build Links: Income -> Category
         Object.entries(categoryMap)
-            .sort((a, b) => b[1].total - a[1].total) // Explicitly sort categoryMap entries by total descending
+            .sort((a, b) => b[1].total - a[1].total)
             .forEach(([cat, { total, merchants }]) => {
-                nodes.push({ id: cat, nodeColor: '#3b82f6' });
+                const catLabel = isMobile ? cat.slice(0, 8) + (cat.length > 8 ? '..' : '') : cat;
+                nodes.push({ id: cat, label: catLabel, nodeColor: '#3b82f6' });
                 links.push({ source: 'Total Income', target: cat, value: total });
 
-                // Build Links: Category -> Top 3 Merchants
                 const topMerchants = Object.entries(merchants)
                     .sort((a, b) => b[1] - a[1])
-                    .slice(0, 3);
+                    .slice(0, isMobile ? 2 : 3); // Show fewer merchants on mobile
 
                 let topMerchantsTotal = 0;
 
                 topMerchants.forEach(([merch, val]) => {
                     topMerchantsTotal += val;
-                    // Ensure unique merchant IDs if same name exists across categories (unlikely but safe)
                     const merchId = `${merch} `;
-                    // Check if node exists to avoid duplicates
+                    const merchLabel = isMobile ? merch.slice(0, 10) + (merch.length > 10 ? '..' : '') : merch;
                     if (!nodes.find(n => n.id === merchId)) {
-                        nodes.push({ id: merchId, nodeColor: '#f43f5e' });
+                        nodes.push({ id: merchId, label: merchLabel, nodeColor: '#f43f5e' });
                     }
                     links.push({ source: cat, target: merchId, value: val });
                 });
 
-                // Add "Others" to balance flow
                 const othersVal = total - topMerchantsTotal;
                 if (othersVal > 0) {
-                    // Use a concise label that indicates category
                     const otherId = `Others (${cat})`;
+                    const otherLabel = isMobile ? 'Others' : otherId;
                     if (!nodes.find(n => n.id === otherId)) {
-                        nodes.push({ id: otherId, nodeColor: '#64748b' });
+                        nodes.push({ id: otherId, label: otherLabel, nodeColor: '#64748b' });
                     }
                     links.push({ source: cat, target: otherId, value: othersVal });
                 }
@@ -72,12 +76,12 @@ export const SankeyFlow: React.FC<SankeyFlowProps> = ({ transactions, totalIncom
         const totalExpenses = expenses.reduce((acc, t) => acc + Math.abs(t.amount), 0);
         const savings = totalIncome - totalExpenses;
         if (savings > 0) {
-            nodes.push({ id: 'Savings', nodeColor: '#10b981' });
+            nodes.push({ id: 'Savings', label: isMobile ? 'Save' : 'Savings', nodeColor: '#10b981' });
             links.push({ source: 'Total Income', target: 'Savings', value: savings });
         }
 
         return { nodes, links };
-    }, [transactions, totalIncome]);
+    }, [transactions, totalIncome, isMobile]);
 
     // Define tooltip component separately to satisfy types or use any cast if needed for Nivo strict types
     const CustomTooltip = (node: any) => (
@@ -87,28 +91,32 @@ export const SankeyFlow: React.FC<SankeyFlowProps> = ({ transactions, totalIncom
     );
 
     return (
-        <div className="h-[600px] w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+        <div className={`${isMobile ? 'h-[500px]' : 'h-[600px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl`}>
             <h3 className="text-slate-100 text-lg font-semibold mb-4">Money Flow (Income → Category → Merchant)</h3>
-            <div className="h-[500px]">
+            <div className={isMobile ? 'h-[400px]' : 'h-[500px]'}>
                 <ResponsiveSankey
                     data={data}
-                    margin={{ top: 20, right: 200, bottom: 20, left: 100 }}
+                    label="label"
+                    margin={isMobile
+                        ? { top: 20, right: 50, bottom: 20, left: 40 }
+                        : { top: 20, right: 200, bottom: 20, left: 100 }
+                    }
                     align="justify"
                     colors={(node: any) => node.nodeColor || '#6366f1'}
                     nodeOpacity={1}
                     nodeHoverOthersOpacity={0.35}
-                    nodeThickness={18}
-                    nodeSpacing={12}
+                    nodeThickness={isMobile ? 24 : 18}
+                    nodeSpacing={isMobile ? 12 : 12}
                     nodeBorderWidth={0}
                     nodeBorderColor={{ from: 'color', modifiers: [['darker', 0.8]] }}
                     linkOpacity={0.5}
                     linkHoverOthersOpacity={0.1}
                     linkContract={0}
-                    enableLinkGradient={true}
+                    enableLinkGradient={!isMobile}
                     labelPosition="outside"
                     labelOrientation="horizontal"
-                    labelPadding={16}
-                    labelTextColor="#e2e8f0"
+                    labelPadding={isMobile ? 6 : 16}
+                    labelTextColor={isMobile ? "#ffffff" : "#e2e8f0"}
                     theme={{
                         tooltip: {
                             container: {

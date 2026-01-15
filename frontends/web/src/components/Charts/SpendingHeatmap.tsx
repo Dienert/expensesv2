@@ -3,6 +3,7 @@ import { ResponsiveCalendar } from '@nivo/calendar';
 import type { Transaction } from '../../lib/types';
 import { format, startOfMonth, endOfMonth, differenceInWeeks, parseISO } from 'date-fns';
 import { formatCurrency } from '../../lib/data';
+import { useMediaQuery } from '../../lib/hooks';
 
 interface SpendingHeatmapProps {
     transactions: Transaction[];
@@ -10,7 +11,9 @@ interface SpendingHeatmapProps {
 }
 
 export const SpendingHeatmap: React.FC<SpendingHeatmapProps> = ({ transactions, onDateClick }) => {
+    const isMobile = useMediaQuery('(max-width: 768px)');
     const containerRef = useRef<HTMLDivElement>(null);
+    // ... logic remains same
     const [containerWidth, setContainerWidth] = useState(0);
 
     useEffect(() => {
@@ -67,23 +70,23 @@ export const SpendingHeatmap: React.FC<SpendingHeatmapProps> = ({ transactions, 
 
     const daySize = useMemo(() => {
         if (containerWidth === 0) return 18;
-        const leftMargin = 35;
+        const leftMargin = isMobile ? 25 : 35;
         const availableWidth = containerWidth - leftMargin;
         // Adjust for the narrowed week count instead of a full 53 weeks
         return availableWidth / (maxWeeksInRange + 0.5);
-    }, [containerWidth, maxWeeksInRange]);
+    }, [containerWidth, maxWeeksInRange, isMobile]);
 
     return (
-        <div className="min-h-[400px] w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300">
+        <div className={`${isMobile ? 'min-h-[300px]' : 'min-h-[400px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300`}>
             <h3 className="text-slate-100 text-lg font-semibold mb-4">Daily Spending Intensity</h3>
-            <div ref={containerRef} className="h-[450px] w-full">
+            <div ref={containerRef} className={`${isMobile ? 'h-[300px]' : 'h-[450px]'} w-full`}>
                 <ResponsiveCalendar
                     data={data}
                     from={fromDate}
                     to={toDate}
                     emptyColor="#1e293b"
                     colors={['#0e4429', '#006d32', '#26a641', '#39d353']} // GitHub-like greens
-                    margin={{ top: 20, right: 0, bottom: 0, left: 35 }}
+                    margin={{ top: 20, right: 0, bottom: 0, left: isMobile ? 25 : 35 }}
                     yearSpacing={60}
                     daySize={daySize}
                     monthBorderColor="#475569"

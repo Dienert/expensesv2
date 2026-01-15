@@ -1,15 +1,16 @@
-// @ts-ignore
 import React, { useMemo } from 'react';
 // @ts-ignore
 import { ResponsiveParallelCoordinates } from '@nivo/parallel-coordinates';
 import type { Transaction } from '../../lib/types';
 import { format } from 'date-fns';
+import { useMediaQuery } from '../../lib/hooks';
 
 interface SpendingParallelProps {
     transactions: Transaction[];
 }
 
 export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions }) => {
+    const isMobile = useMediaQuery('(max-width: 768px)');
     const { data, variables, monthLabels } = useMemo(() => {
         // 0. Initial Guard
         const expenses = transactions.filter(t => !t.isIncome);
@@ -37,7 +38,7 @@ export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions
                 const totalB = expenses.filter(t => t.category === b).reduce((s, t) => s + Math.abs(t.amount), 0);
                 return totalB - totalA;
             })
-            .slice(0, 8);
+            .slice(0, isMobile ? 4 : 8);
 
         if (topCategories.length === 0) return { data: [], variables: [], monthLabels: [] };
 
@@ -171,7 +172,10 @@ export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions
                 <ResponsiveParallelCoordinates
                     data={data}
                     variables={variables}
-                    margin={{ top: 20, right: 60, bottom: 20, left: 80 }}
+                    margin={isMobile
+                        ? { top: 20, right: 30, bottom: 20, left: 40 }
+                        : { top: 20, right: 60, bottom: 20, left: 80 }
+                    }
                     layers={['axes', 'lines']}
                     theme={{
                         axis: {
@@ -213,7 +217,10 @@ export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions
                 {/* Robust Flexbox Axis Labels */}
                 <div
                     className="absolute bottom-0 left-0 right-0 flex pointer-events-none"
-                    style={{ paddingLeft: '80px', paddingRight: '60px' }}
+                    style={{
+                        paddingLeft: isMobile ? '40px' : '80px',
+                        paddingRight: isMobile ? '30px' : '60px'
+                    }}
                 >
                     <div className="flex-1 flex justify-between items-end pb-1">
                         {variables.map((variable: any) => (
@@ -222,8 +229,8 @@ export const SpendingParallel: React.FC<SpendingParallelProps> = ({ transactions
                                 className="w-0 flex flex-col items-center overflow-visible"
                             >
                                 <span
-                                    className="text-[11px] font-bold text-slate-200 whitespace-nowrap"
-                                    style={{ transform: 'translateY(12px)' }}
+                                    className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} font-bold text-slate-200 whitespace-nowrap`}
+                                    style={{ transform: isMobile ? 'translateY(12px) rotate(-45deg)' : 'translateY(12px)' }}
                                 >
                                     {variable.label}
                                 </span>

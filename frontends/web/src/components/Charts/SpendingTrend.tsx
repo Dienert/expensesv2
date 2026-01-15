@@ -2,14 +2,16 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import type { MonthlyStats } from '../../lib/types';
 import { formatCurrency } from '../../lib/data';
+import { useMediaQuery } from '../../lib/hooks';
 
 interface SpendingTrendProps {
     data: MonthlyStats[];
 }
 
 export const SpendingTrend: React.FC<SpendingTrendProps> = ({ data }) => {
+    const isMobile = useMediaQuery('(max-width: 768px)');
     return (
-        <div className="h-[400px] w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col overflow-hidden">
+        <div className={`${isMobile ? 'h-[300px]' : 'h-[400px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col overflow-hidden`}>
             <h3 className="text-slate-100 text-lg font-semibold mb-6">Income vs Expenses</h3>
             <div className="flex-1 min-h-0 w-full relative">
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={1}>
@@ -17,8 +19,8 @@ export const SpendingTrend: React.FC<SpendingTrendProps> = ({ data }) => {
                         data={data}
                         margin={{
                             top: 5,
-                            right: 30,
-                            left: 20,
+                            right: isMobile ? 10 : 30,
+                            left: isMobile ? -20 : 20,
                             bottom: 5,
                         }}
                     >
@@ -26,14 +28,14 @@ export const SpendingTrend: React.FC<SpendingTrendProps> = ({ data }) => {
                         <XAxis
                             dataKey="month"
                             stroke="#94a3b8"
-                            tick={{ fill: '#94a3b8' }}
+                            tick={{ fill: '#94a3b8', fontSize: isMobile ? 10 : 12 }}
                             axisLine={{ stroke: '#334155' }}
                         />
                         <YAxis
                             stroke="#94a3b8"
-                            tick={{ fill: '#94a3b8' }}
+                            tick={{ fill: '#94a3b8', fontSize: isMobile ? 10 : 12 }}
                             axisLine={{ stroke: '#334155' }}
-                            tickFormatter={(value) => `R$ ${value / 1000}k`}
+                            tickFormatter={(value) => isMobile ? `${value / 1000}k` : `R$ ${value / 1000}k`}
                         />
                         <Tooltip
                             cursor={{ fill: '#1e293b', opacity: 0.5 }}

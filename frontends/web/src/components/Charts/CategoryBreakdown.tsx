@@ -2,6 +2,7 @@ import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import type { Transaction } from '../../lib/types';
 import { formatCurrency } from '../../lib/data';
+import { useMediaQuery } from '../../lib/hooks';
 
 interface CategoryBreakdownProps {
     transactions: Transaction[];
@@ -11,6 +12,7 @@ interface CategoryBreakdownProps {
 const COLORS = ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1'];
 
 export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ transactions, onCategoryClick }) => {
+    const isMobile = useMediaQuery('(max-width: 768px)');
     // Aggregate expenses by category
     const data = React.useMemo(() => {
         const expenses = transactions.filter(t => !t.isIncome);
@@ -24,7 +26,7 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ transactio
     }, [transactions]);
 
     return (
-        <div className="h-[400px] w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col overflow-hidden">
+        <div className={`${isMobile ? 'h-[500px]' : 'h-[400px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col overflow-hidden`}>
             <h3 className="text-slate-100 text-lg font-semibold mb-6">Expenses by Category</h3>
             <div className="flex-1 min-h-0 w-full relative">
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={1}>
@@ -55,10 +57,10 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ transactio
                             itemStyle={{ color: '#e2e8f0' }}
                         />
                         <Legend
-                            layout="vertical"
-                            verticalAlign="middle"
-                            align="right"
-                            wrapperStyle={{ color: '#94a3b8' }}
+                            layout={isMobile ? "horizontal" : "vertical"}
+                            verticalAlign={isMobile ? "bottom" : "middle"}
+                            align={isMobile ? "center" : "right"}
+                            wrapperStyle={{ color: '#94a3b8', fontSize: isMobile ? '10px' : '12px', paddingTop: isMobile ? '20px' : '0' }}
                             payload={data.map((item, index) => ({
                                 id: item.name,
                                 type: 'circle',
