@@ -28,6 +28,14 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ transactio
             .sort((a, b) => b.value - a.value);
     }, [transactions]);
 
+    if (!data || data.length === 0) {
+        return (
+            <div className={`${isMobile ? 'h-[500px]' : 'h-[400px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col items-center justify-center text-slate-500`}>
+                <p>{t('noTransactions')}</p>
+            </div>
+        );
+    }
+
     return (
         <div className={`${isMobile ? 'h-[500px]' : 'h-[400px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col overflow-hidden`}>
             <h3 className="text-slate-100 text-lg font-semibold mb-6">{title || t('categoryBreakdown')}</h3>
@@ -56,7 +64,10 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ transactio
                         </Pie>
                         <Tooltip
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem' }}
-                            formatter={(value: any, name: any) => [formatCurrency(value), t(`categories.${name.toLowerCase()}`)]}
+                            formatter={(value: any, name: any) => [
+                                formatCurrency(isNaN(value) ? 0 : value),
+                                t(`categories.${(name || 'other').toLowerCase()}`)
+                            ]}
                             itemStyle={{ color: '#e2e8f0' }}
                         />
                         <Legend
@@ -64,7 +75,7 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ transactio
                             verticalAlign={isMobile ? "bottom" : "middle"}
                             align={isMobile ? "center" : "right"}
                             wrapperStyle={{ color: '#94a3b8', fontSize: isMobile ? '10px' : '12px', paddingTop: isMobile ? '20px' : '0' }}
-                            formatter={(value) => t(`categories.${value.toLowerCase()}`)}
+                            formatter={(value) => t(`categories.${(value || 'other').toLowerCase()}`)}
                         />
                     </PieChart>
                 </ResponsiveContainer>

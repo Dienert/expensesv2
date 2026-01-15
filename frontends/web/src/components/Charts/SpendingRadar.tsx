@@ -39,6 +39,14 @@ export const SpendingRadar: React.FC<SpendingRadarProps> = ({ currentTransaction
         })).sort((a, b) => b.Current - a.Current);
     }, [currentTransactions, allTransactions]);
 
+    if (!data || data.length === 0) {
+        return (
+            <div className={`${isMobile ? 'h-[350px]' : 'h-[400px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col items-center justify-center text-slate-500`}>
+                <p>{t('noTransactions')}</p>
+            </div>
+        );
+    }
+
     return (
         <div className={`${isMobile ? 'h-[350px]' : 'h-[400px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col overflow-hidden`}>
             <h3 className="text-slate-100 text-lg font-semibold mb-4">{title || t('spendingRadar')}</h3>

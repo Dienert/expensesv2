@@ -93,6 +93,14 @@ export const SankeyFlow: React.FC<SankeyFlowProps> = ({ transactions, totalIncom
         </div>
     );
 
+    if (!data.links || data.links.length === 0) {
+        return (
+            <div className={`${isMobile ? 'h-[500px]' : 'h-[600px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex items-center justify-center text-slate-500`}>
+                <p>{t('noTransactions')}</p>
+            </div>
+        );
+    }
+
     return (
         <div className={`${isMobile ? 'h-[500px]' : 'h-[600px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl`}>
             <h3 className="text-slate-100 text-lg font-semibold mb-4">{title || t('sankey.title')}</h3>

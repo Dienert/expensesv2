@@ -114,6 +114,14 @@ export const CumulativePacing: React.FC<CumulativePacingProps> = ({ allTransacti
         }), 1000);
     }, [data]);
 
+    if (!data || data.length === 0 || availableMonths.length === 0) {
+        return (
+            <div className="h-[400px] w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col items-center justify-center text-slate-500">
+                <p>{t('noTransactions')}</p>
+            </div>
+        );
+    }
+
     return (
         <div className="h-[400px] w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col overflow-hidden">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">

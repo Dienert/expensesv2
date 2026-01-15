@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { LayoutDashboard, Receipt, PieChart, Settings, Wallet, Menu, X, CloudUpload } from 'lucide-react';
 import { StatsCard } from './components/StatsCard';
 import { SpendingTrend } from './components/Charts/SpendingTrend';
@@ -13,7 +13,8 @@ import { CumulativePacing } from './components/Charts/CumulativePacing';
 import { SpendingParallel } from './components/Charts/SpendingParallel';
 import { DataImport } from './components/DataImport';
 import { Settings as SettingsView } from './components/Settings';
-import { transactions as allTransactions, getMonthlyStats } from './lib/data';
+import { getMonthlyStats, parseTransactions } from './lib/data';
+import type { Transaction } from './lib/types';
 import { isWithinInterval, subMonths, isSameDay } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLanguage } from './contexts/LanguageContext';
@@ -101,28 +102,55 @@ function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<DateRange>(() => {
-    if (allTransactions.length === 0) {
-      const now = new Date();
-      return { start: subMonths(now, 6), end: now };
+
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
+
+  const loadData = useCallback(async () => {
+    try {
+      if (window.electron?.getTransactions) {
+        const raw = await window.electron.getTransactions();
+        setAllTransactions(parseTransactions(raw));
+      } else {
+        // Fallback for web/dev if needed, though we primarily care about Electron build here
+        setAllTransactions([]);
+      }
+    } catch (err) {
+      console.error('Failed to load transactions:', err);
+    } finally {
+      // Data loaded
     }
-    const dates = allTransactions.map(t => t.date.getTime());
-    return {
-      start: new Date(Math.min(...dates)),
-      end: new Date(Math.max(...dates))
-    };
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const [dateRange, setDateRange] = useState<DateRange>(() => {
+    const now = new Date();
+    return { start: subMonths(now, 6), end: now };
   });
+
+  // Update date range once data is loaded if it's the first time
+  useEffect(() => {
+    if (allTransactions.length > 0) {
+      const dates = allTransactions.map(t => t.date.getTime());
+      setDateRange({
+        start: new Date(Math.min(...dates)),
+        end: new Date(Math.max(...dates))
+      });
+    }
+  }, [allTransactions.length === 0]); // Only trigger when moving from 0 to some
 
   // Filter transactions based on date range
   const filteredTransactions = useMemo(() => {
     return allTransactions.filter(t => isWithinInterval(t.date, { start: dateRange.start, end: dateRange.end }));
-  }, [dateRange]);
+  }, [allTransactions, dateRange]);
 
   const monthlyData = useMemo(() => getMonthlyStats(filteredTransactions), [filteredTransactions]);
 
   // Calculate totals
-  const totalIncome = filteredTransactions.filter(t => t.isIncome).reduce((acc, t) => acc + t.amount, 0);
-  const totalExpense = filteredTransactions.filter(t => !t.isIncome).reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  const totalIncome = useMemo(() => filteredTransactions.filter(t => t.isIncome).reduce((acc, t) => acc + t.amount, 0), [filteredTransactions]);
+  const totalExpense = useMemo(() => filteredTransactions.filter(t => !t.isIncome).reduce((acc, t) => acc + Math.abs(t.amount), 0), [filteredTransactions]);
   const balance = totalIncome - totalExpense;
 
   const categoryTransactions = useMemo(() => {
@@ -315,7 +343,7 @@ function App() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
               >
-                <DataImport />
+                <DataImport onDataUpdate={loadData} />
               </motion.div>
             )}
 

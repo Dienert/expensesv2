@@ -26,6 +26,15 @@ function createWindow() {
     }
 }
 
+// Utility to get platform-persistent data path
+const getDataPath = (filename) => {
+    const userDataPath = app.getPath('userData');
+    const targetPath = path.join(userDataPath, 'data', filename);
+    const dir = path.dirname(targetPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    return targetPath;
+};
+
 // OFX Parsing Logic
 function parseOfx(content) {
     const transactions = [];
@@ -77,10 +86,8 @@ function parseOfx(content) {
 }
 
 async function processData() {
-    const rootDir = path.join(__dirname, '../../..');
-    const cartaoDir = path.join(rootDir, 'dados/cartao');
-    const tudoPath = path.join(rootDir, 'dados/tudo.json');
-    const expensesPath = path.join(rootDir, 'frontends/web/src/data/expenses.json');
+    const cartaoDir = getDataPath('cartao');
+    const expensesPath = getDataPath('expenses.json');
 
     if (!fs.existsSync(cartaoDir)) {
         return { success: true, count: 0 };
@@ -111,12 +118,6 @@ async function processData() {
     uniqueTransactions.sort((a, b) => b.date.localeCompare(a.date));
 
     const jsonData = JSON.stringify(uniqueTransactions, null, 4);
-
-    // Ensure directories exist
-    if (!fs.existsSync(path.dirname(tudoPath))) fs.mkdirSync(path.dirname(tudoPath), { recursive: true });
-    if (!fs.existsSync(path.dirname(expensesPath))) fs.mkdirSync(path.dirname(expensesPath), { recursive: true });
-
-    fs.writeFileSync(tudoPath, jsonData);
     fs.writeFileSync(expensesPath, jsonData);
 
     return { success: true, count: uniqueTransactions.length };
@@ -125,12 +126,7 @@ async function processData() {
 // IPC Handlers
 ipcMain.handle('save-ofx', async (event, { name, buffer }) => {
     try {
-        const rootDir = path.join(__dirname, '../../..');
-        const targetPath = path.join(rootDir, 'dados/cartao', name);
-
-        const dir = path.dirname(targetPath);
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
+        const targetPath = getDataPath(path.join('cartao', name));
         fs.writeFileSync(targetPath, Buffer.from(buffer));
         return { success: true, path: targetPath };
     } catch (error) {
@@ -144,7 +140,7 @@ ipcMain.handle('run-update-script', async () => {
         const res = await processData();
         return {
             success: true,
-            stdout: `Processed ${res.count} transactions successfully (Pure JS mode).`
+            stdout: `Processed ${res.count} transactions successfully to ${getDataPath('expenses.json')}`
         };
     } catch (error) {
         console.error('Error processing data:', error);
@@ -152,14 +148,34 @@ ipcMain.handle('run-update-script', async () => {
     }
 });
 
+ipcMain.handle('get-transactions', async () => {
+    try {
+        const expensesPath = getDataPath('expenses.json');
+        if (fs.existsSync(expensesPath)) {
+            const data = fs.readFileSync(expensesPath, 'utf8');
+            return JSON.parse(data);
+        }
+        return [];
+    } catch (error) {
+        console.error('Error fetching transactions:', error);
+        return [];
+    }
+});
+
 ipcMain.handle('clear-data', async () => {
     try {
-        const rootDir = path.join(__dirname, '../../..');
-        const expensesPath = path.join(rootDir, 'frontends/web/src/data/expenses.json');
+        const expensesPath = getDataPath('expenses.json');
+        if (fs.existsSync(expensesPath)) {
+            fs.writeFileSync(expensesPath, '[]');
+        }
 
-        // Only reset the frontend JSON file to empty array
-        const emptyData = '[]';
-        if (fs.existsSync(expensesPath)) fs.writeFileSync(expensesPath, emptyData);
+        const cartaoDir = getDataPath('cartao');
+        if (fs.existsSync(cartaoDir)) {
+            const files = fs.readdirSync(cartaoDir);
+            for (const file of files) {
+                fs.unlinkSync(path.join(cartaoDir, file));
+            }
+        }
 
         return { success: true };
     } catch (error) {

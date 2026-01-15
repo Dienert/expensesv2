@@ -2,18 +2,11 @@ import React, { useState } from 'react';
 import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Play, X } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-declare global {
-    interface Window {
-        electron: {
-            saveOfx: (name: string, buffer: ArrayBuffer) => Promise<{ success: boolean, path?: string, error?: string }>;
-            runUpdate: () => Promise<{ success: boolean, stdout?: string, stderr?: string, error?: string }>;
-            clearData: () => Promise<{ success: boolean, error?: string }>;
-            getLocale: () => Promise<string>;
-        };
-    }
+interface DataImportProps {
+    onDataUpdate?: () => void;
 }
 
-export const DataImport: React.FC = () => {
+export const DataImport: React.FC<DataImportProps> = ({ onDataUpdate }) => {
     const [files, setFiles] = useState<File[]>([]);
     const [isConfirmingClear, setIsConfirmingClear] = useState(false);
     const [status, setStatus] = useState<{ type: 'idle' | 'uploading' | 'processing' | 'success' | 'error', message: string }>({
@@ -70,6 +63,7 @@ export const DataImport: React.FC = () => {
             setOutput(combinedOutput + (processRes.stdout || 'Success!'));
             setStatus({ type: 'success', message: t('processing.success', { n: files.length }) });
             setFiles([]);
+            if (onDataUpdate) onDataUpdate();
         } catch (err: any) {
             setStatus({ type: 'error', message: err.message });
         }
@@ -84,6 +78,7 @@ export const DataImport: React.FC = () => {
             setStatus({ type: 'success', message: t('processing.clearedSuccess') });
             setIsConfirmingClear(false);
             setOutput(t('processing.cleanupComplete'));
+            if (onDataUpdate) onDataUpdate();
         } catch (err: any) {
             setStatus({ type: 'error', message: err.message });
         }

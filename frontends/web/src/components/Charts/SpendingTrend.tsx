@@ -13,6 +13,14 @@ interface SpendingTrendProps {
 export const SpendingTrend: React.FC<SpendingTrendProps> = ({ data, title }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
     const { t, formatCurrency, language } = useLanguage();
+    if (!data || data.length === 0) {
+        return (
+            <div className={`${isMobile ? 'h-[300px]' : 'h-[400px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col items-center justify-center text-slate-500`}>
+                <p>{t('noTransactions')}</p>
+            </div>
+        );
+    }
+
     return (
         <div className={`${isMobile ? 'h-[300px]' : 'h-[400px]'} w-full bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col overflow-hidden`}>
             <h3 className="text-slate-100 text-lg font-semibold mb-6">{title || t('spendingTrend')}</h3>
@@ -38,12 +46,15 @@ export const SpendingTrend: React.FC<SpendingTrendProps> = ({ data, title }) => 
                             stroke="#94a3b8"
                             tick={{ fill: '#94a3b8', fontSize: isMobile ? 10 : 12 }}
                             axisLine={{ stroke: '#334155' }}
-                            tickFormatter={(value) => isMobile ? `${value / 1000}k` : `${language === 'pt-BR' ? 'R$ ' : '$'}${value / 1000}k`}
+                            tickFormatter={(value) => {
+                                const val = isNaN(value) ? 0 : value;
+                                return isMobile ? `${val / 1000}k` : `${language === 'pt-BR' ? 'R$ ' : '$'}${val / 1000}k`;
+                            }}
                         />
                         <Tooltip
                             cursor={{ fill: '#1e293b', opacity: 0.5 }}
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem' }}
-                            formatter={(value: any) => formatCurrency(value)}
+                            formatter={(value: any) => formatCurrency(isNaN(value) ? 0 : value)}
                             labelStyle={{ color: '#e2e8f0' }}
                         />
                         <Legend />

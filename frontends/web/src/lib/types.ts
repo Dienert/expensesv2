@@ -22,3 +22,15 @@ export interface MonthlyStats {
     balance: number;
     transactions: Transaction[];
 }
+
+declare global {
+    interface Window {
+        electron: {
+            saveOfx: (name: string, buffer: ArrayBuffer) => Promise<{ success: boolean, path?: string, error?: string }>;
+            runUpdate: () => Promise<{ success: boolean, stdout?: string, stderr?: string, error?: string }>;
+            getTransactions: () => Promise<any[]>;
+            clearData: () => Promise<{ success: boolean, error?: string }>;
+            getLocale: () => Promise<string>;
+        };
+    }
+}
