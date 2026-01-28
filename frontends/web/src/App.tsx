@@ -14,6 +14,7 @@ import { SpendingParallel } from './components/Charts/SpendingParallel';
 import { DataImport } from './components/DataImport';
 import { Settings as SettingsView } from './components/Settings';
 import { getMonthlyStats, parseTransactions } from './lib/data';
+import { getDataService } from './lib/dataService';
 import type { Transaction } from './lib/types';
 import { isWithinInterval, subMonths, isSameDay } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -107,17 +108,11 @@ function App() {
 
   const loadData = useCallback(async () => {
     try {
-      if (window.electron?.getTransactions) {
-        const raw = await window.electron.getTransactions();
-        setAllTransactions(parseTransactions(raw));
-      } else {
-        // Fallback for web/dev if needed, though we primarily care about Electron build here
-        setAllTransactions([]);
-      }
+      const service = await getDataService();
+      const raw = await service.getTransactions();
+      setAllTransactions(parseTransactions(raw));
     } catch (err) {
       console.error('Failed to load transactions:', err);
-    } finally {
-      // Data loaded
     }
   }, []);
 

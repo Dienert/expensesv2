@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Play, X } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getDataService } from '../lib/dataService';
 
 interface DataImportProps {
     onDataUpdate?: () => void;
@@ -33,6 +34,7 @@ export const DataImport: React.FC<DataImportProps> = ({ onDataUpdate }) => {
         if (files.length === 0) return;
 
         try {
+            const dataService = await getDataService();
             setOutput('');
             let combinedOutput = '';
 
@@ -43,24 +45,12 @@ export const DataImport: React.FC<DataImportProps> = ({ onDataUpdate }) => {
                     message: t('processing.uploading', { n: i + 1, total: files.length, name: file.name })
                 });
 
-                const buffer = await file.arrayBuffer();
-                const saveRes = await window.electron.saveOfx(file.name, buffer);
-
-                if (!saveRes.success) {
-                    throw new Error(`Failed to save ${file.name}: ${saveRes.error}`);
-                }
-                combinedOutput += `Saved: ${file.name}\n`;
+                const content = await file.text();
+                await dataService.processOfx(file.name, content);
+                combinedOutput += `Processed: ${file.name}\n`;
             }
 
-            setStatus({ type: 'processing', message: t('processing.runningUpdate') });
-            const processRes = await window.electron.runUpdate();
-
-            if (!processRes.success) {
-                setOutput(combinedOutput + (processRes.stderr || processRes.error || 'Process failed'));
-                throw new Error('Script execution failed');
-            }
-
-            setOutput(combinedOutput + (processRes.stdout || 'Success!'));
+            setOutput(combinedOutput + 'Success!');
             setStatus({ type: 'success', message: t('processing.success', { n: files.length }) });
             setFiles([]);
             if (onDataUpdate) onDataUpdate();
@@ -72,8 +62,8 @@ export const DataImport: React.FC<DataImportProps> = ({ onDataUpdate }) => {
     const handleClearData = async () => {
         try {
             setStatus({ type: 'processing', message: t('processing.clearing') });
-            const res = await window.electron.clearData();
-            if (!res.success) throw new Error(res.error || 'Failed to clear data');
+            const dataService = await getDataService();
+            await dataService.clearData();
 
             setStatus({ type: 'success', message: t('processing.clearedSuccess') });
             setIsConfirmingClear(false);
